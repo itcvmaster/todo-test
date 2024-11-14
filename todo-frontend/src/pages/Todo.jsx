@@ -1,56 +1,59 @@
-import React, { useState } from "react";
 import * as Yup from "yup";
+import React, { useState } from "react";
 import {
+    Alert,
     Container,
     Typography,
     Button,
     TextField,
     Paper,
+    List,
     CircularProgress,
+    Snackbar,
     Box,
 } from "@mui/material";
 import TodoItem from "@components/TodoItem";
 import useApi from "@hooks/useApi";
 import { getTasks, addTask, deleteTask, updateTask } from "@api/todoApi";
 
-const Todo = () => {
-    const taskSchema = Yup.object().shape({
-        name: Yup.string().trim().required("Task name is required"),
-        dueDate: Yup.date().required("Due date is required"),
-    });
+const taskSchema = Yup.object().shape({
+    name: Yup.string().trim().required("Task name is required"),
+    dueDate: Yup.date().required("Due date is required"),
+});
 
+const Todo = () => {
     const [inputValue, setInputValue] = useState("");
-    const [inputDataValue, setInputDataValue] = useState("");
+    const [dueDate, setDueDate] = useState("2024-11-15");
 
     const {
         isPending: isFetching,
-        error,
         data: todos,
-        setData: setTodos,
+        setData: setTodos
     } = useApi(getTasks, [], true);
+    const [errorMessage, setError] = useState();
     const { isPending: isAdding, callApi: callAddTask } = useApi(addTask);
     const { callApi: callDeleteTask } = useApi(deleteTask);
     const { callApi: callUpdateTask } = useApi(updateTask);
 
     const handleAdd = async () => {
         try {
-            await taskSchema.validate({ name: inputValue, dueDate: inputDataValue });
+            await taskSchema.validate({ name: inputValue, dueDate });
 
             const newTodo = {
                 id: Date.now(),
                 name: inputValue,
-                dueDate: inputDataValue,
+                dueDate,
                 isCompleted: false,
             };
 
             const _todo = await callAddTask(newTodo);
             if (_todo) {
-                setTodos([...todos, _todo]);
+                setTodos(_todos => [..._todos, _todo]);
                 setInputValue("");
-                setInputDataValue("");
+                setDueDate("2024-11-15");
             }
         } catch (validationError) {
-            alert(validationError.message);
+            setError(validationError.message);
         }
     };
 
@@ -64,9 +67,7 @@ const Todo = () => {
     const handleUpdate = async (updatedTask) => {
         const _updated = await callUpdateTask(updatedTask);
         if (_updated) {
-            setTodos(
-                todos.map((_todo) => (_todo._id === _updated._id ? _updated : _todo))
-            );
+            setTodos(todos.map((_todo) => _todo._id === _updated._id ? _updated : _todo));
         }
     };
 
@@ -92,8 +93,8 @@ const Todo = () => {
                         label="Due Date"
                         name="date"
                         type="date"
-                        value={inputDataValue}
-                        onChange={(e) => setInputDataValue(e.target.value)}
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
                         style={{ marginTop: '0' }}
                         InputLabelProps={{ shrink: true }}
                     />
@@ -110,21 +111,21 @@ const Todo = () => {
                 </Box>
             </Paper>
 
-            {isFetching ? (
-                <CircularProgress />
-            ) : (
-                <>
-                    {todos?.length > 0 ? (
-                        <TodoItem
-                            items={todos}
-                            onUpdate={handleUpdate}
-                            onDelete={handleDelete}
-                        />
-                    ) : (
-                        <p>There is no Task.</p>
-                    )}
-                </>
-            )}
+            {isFetching
+                ? (<CircularProgress />)
+                : (
+                    <>
+                        {todos?.length > 0 ? (
+                            <TodoItem
+                                items={todos}
+                                onUpdate={handleUpdate}
+                                onDelete={handleDelete}
+                            />
+                        ) : (
+                            <p>There is no Task.</p>
+                        )}
+                    </>
+                )}
         </Container>
     );
 };
