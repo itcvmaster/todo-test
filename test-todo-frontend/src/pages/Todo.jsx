@@ -1,21 +1,25 @@
 import React, { useState } from "react";
 import {
-    Alert,
     Container,
     Typography,
     Button,
     TextField,
     Paper,
-    List,
     CircularProgress,
-    Snackbar,
+    Box,
 } from "@mui/material";
 import TodoItem from "@components/TodoItem";
 import useApi from "@hooks/useApi";
 import { getTasks, addTask, deleteTask, updateTask } from "@api/todoApi";
 
+
+
 const Todo = () => {
+    const userSchema = Yup.Object({
+        
+    })
     const [inputValue, setInputValue] = useState("");
+    const [inputDataValue, setInputDataValue] = useState("");
     const {
         isPending: isFetching,
         error,
@@ -28,11 +32,16 @@ const Todo = () => {
 
     const handleAdd = async () => {
         // TODO: replace validation using yup.
-        if (!inputValue.trim()) return;
+        if (!inputValue.trim()) {
+            return;
+        }
+        if (!inputDataValue.trim()) return;
+
 
         const newTodo = {
             id: Date.now(),
             name: inputValue,
+            dueDate: inputDataValue,
             isCompleted: false,
         };
 
@@ -40,6 +49,7 @@ const Todo = () => {
         if (_todo) {
             setTodos([...todos, _todo]);
             setInputValue("");
+            setInputDataValue("");
         }
     };
 
@@ -58,28 +68,59 @@ const Todo = () => {
             setTodos(todos.map((_todo) => _todo._id === _updated._id ? _updated : _todo));
         }
     };
-
     return (
         <Container>
             <Typography variant="h4" align="center" gutterBottom mt={3}>
                 TODO List
             </Typography>
             <Paper elevation={3} sx={{ padding: 2, mb: 2 }}>
-                <TextField
-                    label="Input your task here.."
-                    variant="outlined"
-                    fullWidth
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                />
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleAdd}
-                    sx={{ mt: 2, minWidth: 118 }}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        gap: '30px'
+                    }}
                 >
-                    {isAdding ? <CircularProgress size={24} /> : "Add a Task"}
-                </Button>
+                    <TextField
+                        label="Input your task here.."
+                        placeholder="Input your task here..."
+                        variant="outlined"
+                        fullWidth
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                    />
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Due Date"
+                        name="date"
+                        type="date"
+                        value={inputDataValue}
+                        onChange={(e) => setInputDataValue(e.target.value)}
+                        style={{ marginTop: '0' }}
+                        InputLabelProps={{
+                            shrink: true,
+                        }}
+                    />
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        width: '100%',
+                    }}
+                >
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleAdd}
+                        sx={{ mt: 2, minWidth: 118 }}
+                    >
+                        {isAdding ? <CircularProgress size={24} /> : 'Add a Task'}
+                    </Button>
+                </Box>
             </Paper>
 
             {isFetching
@@ -87,16 +128,11 @@ const Todo = () => {
                 : (
                     <>
                         {todos?.length > 0 ? (
-                            <List>
-                                {todos.map((todo) => (
-                                    <TodoItem
-                                        key={todo._id}
-                                        item={todo}
-                                        onUpdate={handleUpdate}
-                                        onDelete={handleDelete}
-                                    ></TodoItem>
-                                ))}
-                            </List>
+                            <TodoItem
+                                items={todos}
+                                onUpdate={handleUpdate}
+                                onDelete={handleDelete}
+                            ></TodoItem>
                         ) : (
                             <p>There is no Task.</p>
                         )}
