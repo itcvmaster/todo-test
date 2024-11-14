@@ -22,7 +22,7 @@ class TaskService {
             const tasks = await TaskCollection.find();
             console.log("Fetched Tasks:", tasks);
 
-            return tasks;
+            return tasks as ITaskModel[];
 
         } catch (error) {
             throw Error(ErrorCode.DB_FETCHING_FAILED.code);
@@ -78,12 +78,12 @@ class TaskService {
             console.log(id, payload);
             const updatedTask = await TaskCollection.findByIdAndUpdate(
                 id,
-                { name: payload.name, isCompleted: payload.isCompleted },
+                { name: payload.name, isCompleted: payload.isCompleted, dueDate: payload.dueDate},
                 { new: true }
             );
             console.log('Updated Task:', updatedTask);
 
-            return updatedTask;
+            return updatedTask as ITaskModel;
 
         } catch (error) {
             console.log("update failed:", error);
@@ -110,7 +110,7 @@ class TaskService {
             const deletedTask = await TaskCollection.findByIdAndDelete(id);
             if (deletedTask) {
                 console.log('Deleted Task:', deletedTask);
-                return deletedTask;
+                return deletedTask as ITaskModel;
             } else {
                 throw Error(ErrorCode.TASK_NOT_FOUND.code);
             }

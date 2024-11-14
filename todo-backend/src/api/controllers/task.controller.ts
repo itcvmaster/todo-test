@@ -4,7 +4,7 @@ import TaskService from "@/api/services/task.service";
 class TaskController {
 
     /**
-      * GET /tasks
+      * GET /tasks?page=0&size=0
       * 
       * @param {*} req A request 
       * @param {*} res A response to send

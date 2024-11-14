@@ -2,9 +2,7 @@ import mongoose from "mongoose";
 
 export default function configMongoDB() {
     mongoose
-        .connect(
-            process.env.MONGODB_URL,
-        )
+        .connect(process.env.MONGODB_URL)
         .then(() => {
             console.log('mongodb connected.');
         })

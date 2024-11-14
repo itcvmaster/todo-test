@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import * as Yup from "yup";
 import {
     Container,
     Typography,
@@ -12,50 +13,49 @@ import TodoItem from "@components/TodoItem";
 import useApi from "@hooks/useApi";
 import { getTasks, addTask, deleteTask, updateTask } from "@api/todoApi";
 
-
-
 const Todo = () => {
-    const userSchema = Yup.Object({
-        
-    })
+    const taskSchema = Yup.object().shape({
+        name: Yup.string().trim().required("Task name is required"),
+        dueDate: Yup.date().required("Due date is required"),
+    });
+
     const [inputValue, setInputValue] = useState("");
     const [inputDataValue, setInputDataValue] = useState("");
+
     const {
         isPending: isFetching,
         error,
         data: todos,
-        setData: setTodos
+        setData: setTodos,
     } = useApi(getTasks, [], true);
     const { isPending: isAdding, callApi: callAddTask } = useApi(addTask);
     const { callApi: callDeleteTask } = useApi(deleteTask);
     const { callApi: callUpdateTask } = useApi(updateTask);
 
     const handleAdd = async () => {
-        // TODO: replace validation using yup.
-        if (!inputValue.trim()) {
-            return;
-        }
-        if (!inputDataValue.trim()) return;
+        try {
+            await taskSchema.validate({ name: inputValue, dueDate: inputDataValue });
 
+            const newTodo = {
+                id: Date.now(),
+                name: inputValue,
+                dueDate: inputDataValue,
+                isCompleted: false,
+            };
 
-        const newTodo = {
-            id: Date.now(),
-            name: inputValue,
-            dueDate: inputDataValue,
-            isCompleted: false,
-        };
-
-        const _todo = await callAddTask(newTodo);
-        if (_todo) {
-            setTodos([...todos, _todo]);
-            setInputValue("");
-            setInputDataValue("");
+            const _todo = await callAddTask(newTodo);
+            if (_todo) {
+                setTodos([...todos, _todo]);
+                setInputValue("");
+                setInputDataValue("");
+            }
+        } catch (validationError) {
+            alert(validationError.message);
         }
     };
 
     const handleDelete = async (id) => {
         const deletedTask = await callDeleteTask(id);
-        console.log(deletedTask);
         if (deletedTask) {
             setTodos(todos.filter((_todo) => _todo._id !== deletedTask._id));
         }
@@ -63,23 +63,20 @@ const Todo = () => {
 
     const handleUpdate = async (updatedTask) => {
         const _updated = await callUpdateTask(updatedTask);
-        console.log("updated", updatedTask, _updated)
         if (_updated) {
-            setTodos(todos.map((_todo) => _todo._id === _updated._id ? _updated : _todo));
+            setTodos(
+                todos.map((_todo) => (_todo._id === _updated._id ? _updated : _todo))
+            );
         }
     };
+
     return (
         <Container>
             <Typography variant="h4" align="center" gutterBottom mt={3}>
                 TODO List
             </Typography>
             <Paper elevation={3} sx={{ padding: 2, mb: 2 }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        gap: '30px'
-                    }}
-                >
+                <Box sx={{ display: 'flex', gap: '30px' }}>
                     <TextField
                         label="Input your task here.."
                         placeholder="Input your task here..."
@@ -87,9 +84,7 @@ const Todo = () => {
                         fullWidth
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        InputLabelProps={{
-                            shrink: true,
-                        }}
+                        InputLabelProps={{ shrink: true }}
                     />
                     <TextField
                         fullWidth
@@ -100,18 +95,10 @@ const Todo = () => {
                         value={inputDataValue}
                         onChange={(e) => setInputDataValue(e.target.value)}
                         style={{ marginTop: '0' }}
-                        InputLabelProps={{
-                            shrink: true,
-                        }}
+                        InputLabelProps={{ shrink: true }}
                     />
                 </Box>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        width: '100%',
-                    }}
-                >
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
                     <Button
                         variant="contained"
                         color="primary"
@@ -123,21 +110,21 @@ const Todo = () => {
                 </Box>
             </Paper>
 
-            {isFetching
-                ? (<CircularProgress />)
-                : (
-                    <>
-                        {todos?.length > 0 ? (
-                            <TodoItem
-                                items={todos}
-                                onUpdate={handleUpdate}
-                                onDelete={handleDelete}
-                            ></TodoItem>
-                        ) : (
-                            <p>There is no Task.</p>
-                        )}
-                    </>
-                )}
+            {isFetching ? (
+                <CircularProgress />
+            ) : (
+                <>
+                    {todos?.length > 0 ? (
+                        <TodoItem
+                            items={todos}
+                            onUpdate={handleUpdate}
+                            onDelete={handleDelete}
+                        />
+                    ) : (
+                        <p>There is no Task.</p>
+                    )}
+                </>
+            )}
         </Container>
     );
 };
